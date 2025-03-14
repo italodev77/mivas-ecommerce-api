@@ -2,6 +2,7 @@ package dev.mivas.ecommerceapi.service;
 
 import dev.mivas.ecommerceapi.client.response.PlatziProductResponse;
 import dev.mivas.ecommerceapi.controller.request.BasketRequest;
+import dev.mivas.ecommerceapi.controller.request.PaymentRequest;
 import dev.mivas.ecommerceapi.entity.Basket;
 import dev.mivas.ecommerceapi.entity.Product;
 import dev.mivas.ecommerceapi.entity.Status;
@@ -56,5 +57,34 @@ public class BasketService {
         basket.calculateTotalPrice();
         return basketRepository.save(basket);
 
+    }
+
+    public Basket updateBasket(String basketId, BasketRequest basketRequest){
+        Basket basket = getBasketById(basketId);
+
+        List<Product> products = new ArrayList<>();
+
+        basketRequest.products().forEach(productRequest -> {
+            PlatziProductResponse platziProductResponse = productService.getProductsById(productRequest.id());
+            products.add(Product.builder()
+                    .id(platziProductResponse.id())
+                    .title(platziProductResponse.title())
+                    .price(platziProductResponse.price())
+                    .quantity(productRequest.quantity())
+                    .build());
+
+        });
+
+            basket.setProducts(products);
+
+            basket.calculateTotalPrice();
+            return basketRepository.save(basket);
+    }
+
+    public Basket payBasket(String basketId, PaymentRequest paymentRequest){
+        Basket savedBasket = getBasketById(basketId);
+        savedBasket.setPaymentMethod(paymentRequest.getPaymentMethod());
+        savedBasket.setStatus(Status.SOLD);
+        return basketRepository.save(savedBasket);
     }
 }
